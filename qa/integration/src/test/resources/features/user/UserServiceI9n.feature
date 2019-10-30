@@ -174,6 +174,41 @@ Feature: User Service Integration
     Then An exception was thrown
     And I logout
 
+  Scenario: Create same user in different accounts
+  Creating user with name "TestUser" as user kapua-sys, creating child account,
+  trying to create user with same name in new account. An exception should be thrown.
+
+    Given I login as user with name "kapua-sys" and password "kapua-password"
+    And Scope with ID 1
+    And I configure account service
+      | type    | name                   | value |
+      | boolean | infiniteChildEntities  | true  |
+      | integer | maxNumberChildEntities | 50    |
+    And I configure user service
+      | type    | name                       | value |
+      | boolean | infiniteChildEntities      | true  |
+      | integer | maxNumberChildEntities     | 50    |
+      | boolean | lockoutPolicy.enabled      | false |
+      | integer | lockoutPolicy.maxFailures  | 3     |
+      | integer | lockoutPolicy.resetAfter   | 300   |
+      | integer | lockoutPolicy.lockDuration | 3     |
+    And I create user with name "TestUser"
+    And I create a account with name "SubAccount", organization name "TestOrganization" and email adress "test@gmail.com"
+    And The account with Id 1 has 1 subaccounts
+    And I find account with name "SubAccount"
+    And I configure account service
+      | type    | name                   | value |
+      | boolean | infiniteChildEntities  | true  |
+      | integer | maxNumberChildEntities | 50    |
+    And I configure user service
+      | type    | name                       | value |
+      | boolean | infiniteChildEntities      | true  |
+      | integer | maxNumberChildEntities     | 5     |
+    And I expect the exception "KapuaDuplicateNameInAnotherAccountError" with the text "An entity with the same name"
+    When I create user with name "TestUser" in child account
+    Then An exception was thrown
+    And I logout
+
   Scenario: Stop event broker for all scenarios
 
     Given Stop Event Broker

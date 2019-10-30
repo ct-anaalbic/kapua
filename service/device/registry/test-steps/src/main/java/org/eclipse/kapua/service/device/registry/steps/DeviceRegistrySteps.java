@@ -784,10 +784,13 @@ public class DeviceRegistrySteps extends TestBase {
     public void deleteDeviceWithClientId(String clientId)
             throws Exception {
 
-        primeException();
+        Device device = (Device) stepData.get("Device");
+
         try {
-            Device tmpDev = deviceRegistryService.findByClientId(getCurrentScopeId(), clientId);
-            deviceRegistryService.delete(getCurrentScopeId(), tmpDev.getId());
+            primeException();
+            if (device.getClientId().equals(clientId)) {
+                deviceRegistryService.delete(getCurrentScopeId(), device.getId());
+            }
         } catch (KapuaException ex) {
             verifyException(ex);
         }

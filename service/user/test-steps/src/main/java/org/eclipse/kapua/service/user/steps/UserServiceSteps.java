@@ -1014,6 +1014,23 @@ public class UserServiceSteps extends TestBase {
         }
     }
 
+    @And("^I create user with name \"([^\"]*)\" in child account$")
+    public void iCreateUserWithNameInSubaccount(String name) throws Exception {
+        Account account = (Account) stepData.get("LastAccount");
+
+        UserCreator userCreator = userFactory.newCreator(account.getId());
+        userCreator.setName(name);
+        primeException();
+        try {
+            stepData.remove("UserCreator");
+            User childAccountUser = userService.create(userCreator);
+            stepData.put("UserCreator", userCreator);
+            stepData.put("ChildAccountUser", childAccountUser);
+        } catch (KapuaException ex) {
+            verifyException(ex);
+        }
+    }
+
     // *****************
     // * Inner Classes *
     // *****************

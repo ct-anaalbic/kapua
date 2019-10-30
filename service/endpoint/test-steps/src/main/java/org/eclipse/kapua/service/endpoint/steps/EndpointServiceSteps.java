@@ -125,7 +125,7 @@ public class EndpointServiceSteps extends TestBase {
     // ************************************************************************************
 
     @And("^I create endpoint with schema \"([^\"]*)\", dns \"([^\"]*)\" and port (\\d+)$")
-    public void iCreateEndpointWithSchemaDnsAndPort(String schema, String dns, int port) throws Exception {
+    public void createEndpoint(String schema, String dns, int port) throws Exception {
         EndpointInfoCreator endpointInfoCreator = endpointInfoFactory.newCreator(getCurrentScopeId());
         endpointInfoCreator.setSchema(schema);
         endpointInfoCreator.setDns(dns);
@@ -139,7 +139,7 @@ public class EndpointServiceSteps extends TestBase {
     }
 
     @And("^I try to find endpoint with schema \"([^\"]*)\"$")
-    public void iFoundEndpointWithSchema(String schema) throws Exception {
+    public void foundEndpointBySchema(String schema) throws Exception {
         primeException();
 
         try {
@@ -162,7 +162,7 @@ public class EndpointServiceSteps extends TestBase {
     }
 
     @And("^I delete the last created endpoint$")
-    public void iDeleteTheLastCreatedEndpoint() throws Exception {
+    public void deleteLastCreatedEndpoint() throws Exception {
 
         try {
             EndpointInfo endpointInfo = (EndpointInfo) stepData.get("EndpointInfo");
@@ -173,7 +173,7 @@ public class EndpointServiceSteps extends TestBase {
     }
 
     @When("^I delete endpoint with schema \"([^\"]*)\"$")
-    public void iDeleteEndpointWithSchema(String schema) throws Throwable {
+    public void deleteEndpointBySchema(String schema) throws Throwable {
         primeException();
 
         try {
@@ -182,6 +182,20 @@ public class EndpointServiceSteps extends TestBase {
             EndpointInfo endpointInfo = endpointInfoService.query(endpointInfoQuery).getFirstItem();
 
             endpointInfoService.delete(SYS_SCOPE_ID, endpointInfo.getId());
+        } catch (KapuaException ex) {
+            verifyException(ex);
+        }
+    }
+
+    @And("^I try to edit endpoint schema to \"([^\"]*)\"$")
+    public void editEndpointInfoSchema(String schema) throws Exception {
+        EndpointInfo endpointInfo = (EndpointInfo) stepData.get("EndpointInfo");
+        endpointInfo.setSchema(schema);
+
+        primeException();
+        try {
+            EndpointInfo newEndpoint = endpointInfoService.update(endpointInfo);
+            stepData.put("EndpointInfo", newEndpoint);
         } catch (KapuaException ex) {
             verifyException(ex);
         }

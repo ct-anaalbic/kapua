@@ -874,7 +874,7 @@ public class AccountServiceSteps extends TestBase {
 
     @And("^I try to edit description to \"([^\"]*)\"$")
     public void iTryToEditAccountWithName(String description) throws Exception {
-        Account account = (Account) stepData.get("Account");
+        Account account = (Account) stepData.get("LastAccount");
         account.setDescription(description);
 
         try {
@@ -894,9 +894,9 @@ public class AccountServiceSteps extends TestBase {
 
         try {
             primeException();
-            stepData.remove("Account");
+            stepData.remove("LastAccount");
             Account account = accountService.create(accountCreator);
-            stepData.put("Account", account);
+            stepData.put("LastAccount", account);
         } catch (KapuaException ex) {
             verifyException(ex);
         }
@@ -927,6 +927,26 @@ public class AccountServiceSteps extends TestBase {
     public void verifySelfAccount() throws Exception {
         assertNotNull(stepData.get("LastAccount"));
     }
+
+    @And("^I create a account with name \"([^\"]*)\", organization name \"([^\"]*)\" and email adress \"([^\"]*)\" and child account$")
+    public void iCreateAAccountWithNameOrganizationNameAndEmailAdressAndChildAccount(String accountName, String organizationName, String email) throws Exception {
+        Account lastAccount = (Account) stepData.get("LastAccount");
+
+        AccountCreator accountCreator = accountFactory.newCreator(lastAccount.getId());
+        accountCreator.setName(accountName);
+        accountCreator.setOrganizationName(organizationName);
+        accountCreator.setOrganizationEmail(email);
+
+        try {
+            primeException();
+            stepData.remove("LastAccount");
+            Account account = accountService.create(accountCreator);
+            stepData.put("LastAccount", account);
+        } catch (KapuaException ex) {
+            verifyException(ex);
+        }
+    }
+
 
     // *****************
     // * Inner Classes *
