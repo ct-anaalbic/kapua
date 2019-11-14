@@ -1023,6 +1023,7 @@ Feature: User role service integration tests
   Scenario: Try to find users granted to admin role
   Creating two users as user kapua-sys, and adding "admin" role to these users.
   Searching for granted users, counting them and confirming name of them.
+    #their name
 
     Given I login as user with name "kapua-sys" and password "kapua-password"
     And Scope with ID 1
@@ -1039,6 +1040,7 @@ Feature: User role service integration tests
       | name      |
       | TestUser  |
       | TestUser1 |
+    # 3 users should be here? wtf?
     And No exception was thrown
     And I logout
 
@@ -1046,6 +1048,7 @@ Feature: User role service integration tests
   Creating two users as user kapua-sys, creating role "test_role" and adding
   a created role to these users. Searching for granted users, counting them
   and confirming name of them.
+    # their name
 
     Given I login as user with name "kapua-sys" and password "kapua-password"
     And Scope with ID 1
@@ -1064,6 +1067,7 @@ Feature: User role service integration tests
       | name      |
       | TestUser1 |
       | TestUser2 |
+        # 3 users should be here? wtf?
     And No exception was thrown
     And I logout
 
@@ -1075,14 +1079,18 @@ Feature: User role service integration tests
     Given I login as user with name "kapua-sys" and password "kapua-password"
     And Scope with ID 1
     And I create a account with name "SubAccount", organization name "Organization" and email adress "test@test.com"
+    # create an account
     And I configure user service
       | type    | name                   | value |
       | boolean | infiniteChildEntities  | true  |
       | integer | maxNumberChildEntities | 5     |
     And I create user with name "TestUser" in child account
+    # And I create user with name "TestUser" in account "SubAccount"
     And I create role "TestRole" in child account
+      # And I create role with name "TestRole" in account "SubAccount"
     And I create the access info entity in child account
     And I add access role to user in child account
+      # And I add access role "TestRole" to user "TestUser" in account "SubAccount"
     And I count the access roles from user in child account
     And I count 1
     And I expect the exception "KapuaDuplicateNameException" with the text "An entity with the same name TestRole already exists."
@@ -1099,6 +1107,7 @@ Feature: User role service integration tests
     Given I login as user with name "kapua-sys" and password "kapua-password"
     And Scope with ID 1
     And I create a account with name "account1", organization name "organization" and email adress "organization@gmail.com"
+    # create an account
     And I configure user service
       | type    | name                       | value |
       | boolean | infiniteChildEntities      | true  |
@@ -1106,8 +1115,11 @@ Feature: User role service integration tests
     And The account with Id 1 has 1 subaccounts
     And I find account with name "account1"
     And I create role "Role1" in child account
+      # And I create role with name "TestRole" in account "SubAccount"
     And I try to find role "Role1" in child account
+    # And I try to find role "Role1" in account "account1"
     Then Role in child account is found
+    # Then Role "Role1" in account "account1" is found
     And I select the domain "user"
     And I create the following role permission in child account
       | scopeId | actionName |
@@ -1117,11 +1129,14 @@ Feature: User role service integration tests
     And I search for the permissions of founded role in child account
     And I count 3
     And I create user with name "SubUser" in child account
+    # ... in account "account1"
     And Credentials
       | name    | password      | enabled |
       | SubUser | User@10031995 | true    |
     And I create the access info entity in child account
+    # ...access info entity in account "Accountname"
     And I add access role to user in child account
+      # And I add access role "TestRole" to user "TestUser" in account "SubAccount"
     And I logout
     And I login as user with name "SubUser" and password "User@10031995"
     And I create user with name "User"
@@ -1140,6 +1155,8 @@ Feature: User role service integration tests
     Given I login as user with name "kapua-sys" and password "kapua-password"
     And Scope with ID 1
     And I create a account with name "account1", organization name "organization" and email adress "organization@gmail.com"
+    # ... an account
+    # all other comments as aboe (change name of tests steps so they are not so generic)
     And I configure user service
       | type    | name                       | value |
       | boolean | infiniteChildEntities      | true  |
@@ -1181,6 +1198,8 @@ Feature: User role service integration tests
     Given I login as user with name "kapua-sys" and password "kapua-password"
     And Scope with ID 1
     And I create a account with name "account1", organization name "organization" and email adress "organization@gmail.com"
+        # ... an account
+    # all other comments as aboe (change name of tests steps so they are not so generic)
     And I configure user service
       | type    | name                       | value |
       | boolean | infiniteChildEntities      | true  |
