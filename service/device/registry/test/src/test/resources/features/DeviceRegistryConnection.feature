@@ -232,6 +232,73 @@ Scenario: Generic connection query
     When I query for all connections with the parameter "serverIp" set to "127.0.0.11"
     Then I find 4 connections
 
+    # *************************************
+    # * Scenarios for connection clientId *
+    # *************************************
+
+    Scenario: Create connection with valid symbols for clientId
+    Creating connection with clientId which contains allowed numeric and alphanumeric symbols.
+    Finding connections which contain allowed symbol. Everything should pass without exception.
+
+        Given I create the new connections with clientId "testClient" and allowed symbols "!$<;|:-@%()_={}'^`~[]0123456789"
+        When I query for created connections
+        Then I find connections with clientId which contains "testClient" word
+        And No exception was thrown
+
+    Scenario: Create connection with clientId which contains invalid symbols
+    Creating connections with clientId which contains invalid symbols.
+    Finding connections which contain invalid symbol. Connections shouldn't be found.
+
+        Given I expect the exception "KapuaIllegalArgumentException" with the text "*"
+        When I create the new connections with clientId "testClient" and invalid symbols "#+*&,?>/:"
+        Then An exception was thrown
+        And I query for connection with clientId "Test#"
+        Then No connection was found
+
+    Scenario: Create a connection with empty clientId
+    Create a connection with empty clientId. Connection shouldn't be created.
+
+        Given I expect the exception "KapuaIllegalNullArgumentException" with the text "*"
+        When I have the following connection
+            | clientId | clientIp    | serverIp   | protocol | allowUserChange |
+            |          | 127.0.0.101 | 127.0.0.10 | tcp      | true            |
+        Then An exception was thrown
+        When I query for connection with clientId ""
+        Then No connection was found
+
+    Scenario: Create a connection with too long clientId
+    Create a connection with clientId which is longer than 255 characters. Connection shouldn't be created.
+
+        Given I expect the exception "KapuaIllegalArgumentException" with the text "*"
+        When I have the following connection
+            | clientId                                                                                                                                                                                                                                                         | clientIp    | serverIp   | protocol | allowUserChange |
+            | TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest | 127.0.0.101 | 127.0.0.10 | tcp      | true            |
+        Then An exception was thrown
+        When I query for connection with clientId "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"
+        Then No connection was found
+
+    Scenario: Create a connection with short clientId
+    Create a connection with clientId which contains only one character. Connection should be created.
+
+        Given I have the following connection
+            | clientId | clientIp    | serverIp   | protocol | allowUserChange |
+            | t        | 127.0.0.101 | 127.0.0.10 | tcp      | true            |
+        When I query for connection with clientId "t"
+        Then I find connection with clientId "t"
+        And No exception was thrown
+
+    Scenario: Create two connections with same clientId
+    Creating two connections with same clientId. Only one connection should be created.
+
+        Given I expect the exception "KapuaDuplicateNameException" with the text "*"
+        And I have the following connections
+            | clientId     | clientIp    | serverIp   | protocol | allowUserChange |
+            | testClient01 | 127.0.0.101 | 127.0.0.10 | tcp      | true            |
+            | testClient01 | 127.0.0.102 | 127.0.0.10 | tcp      | true            |
+        Then An exception was thrown
+        When I query for connection with clientId "testClient01"
+        And I count 1 connection in scope 1
+
 Scenario: Connection Service factory sanity checks
     Then All connection factory functions must return non null values
 

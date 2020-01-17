@@ -12,6 +12,7 @@
 @unit
 @deviceRegistry
 @device
+
 Feature: Device Registry CRUD tests
     The Device registry Service is responsible for CRUD operations for devices in the Kapua
     database.
@@ -132,7 +133,7 @@ Scenario: Device queries
     When I query for devices with BIOS version "1.3.0"
     Then I find 100 devices
     When I query for devices with BIOS different from "1.2.0"
-    Then I find 201 devices
+    Then I find 100 devices
     When I query for devices with Client Id "TestDevice"
     Then I find 1 device
 
@@ -229,7 +230,7 @@ Scenario: Delete an existing device from the registry
         | boolean | infiniteChildEntities  | true  |
         | integer | maxNumberChildEntities |  10   |
     Given A device named "TestDevice"
-    When I delete the device with the cleint id "TestDevice"
+    When I delete the device with the clientId "TestDevice"
     Then There is no device with the client ID "TestDevice"
 
 Scenario: Try to delete a non existing device from the registry
@@ -250,3 +251,62 @@ Scenario: Device factory sanity checks
     that the items returned are not null.
 
     Then All device factory functions must return non null values
+
+    # *********************************
+    # * Scenarios for device clientId *
+    # *********************************
+
+    Scenario: Create devices with valid symbols within clientId
+    Create several devices with clientId which contain allowed alphanumeric symbols.
+    After that try to find devices which contain allowed symbol. Everything should pass without exception.
+
+        Given I create a devices with clientId "testDevice" and symbols "!$<;|:-@%()_={}'^`~[]0123456789"
+        When I query for created devices
+        Then I find devices with clientId which contains "testDevice" word
+        And No exception was thrown
+
+    Scenario: Create devices with clientId which contains invalid symbols
+    Creating devices with clientId which contains invalid symbols.
+    Finding devices which contain invalid symbols. Devices shouldn't be found.
+
+        Given I expect the exception "KapuaIllegalArgumentException" with the text "*"
+        When I create a device with clientId "testDevice" and invalid symbols "#+*&,?>/:"
+        Then An exception was thrown
+        And I query for created devices
+        Then There is 0 devices
+
+    Scenario: Create a device with empty clientId
+    Creating device with empty clientId. Device shouldn't be created.
+
+        Given I expect the exception "KapuaIllegalNullArgumentException" with the text "*"
+        When I create a device with clientId ""
+        Then An exception was thrown
+        When I query for device with clientId ""
+        Then There is no such device
+
+    Scenario: Create a device with too long clientId
+    Create a device with clientId which is longer than 255 characters. Device shouldn't be created.
+
+        Given I expect the exception "KapuaIllegalArgumentException" with the text "*"
+        When I create a device with clientId "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"
+        Then An exception was thrown
+        When I query for device with clientId "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"
+        Then There is no device with the client ID "TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest"
+
+    Scenario: Create a device with short clientId
+    Create a device with clientId which contains only one character. Device should be created.
+
+        Given I create a device with clientId "d"
+        When I query for device with clientId "d"
+        Then I find device with clientId "d"
+        And No exception was thrown
+
+    Scenario: Create two devices with same clientId
+    Create two devices with same clientId. Only one device should be created since clientID is a unique parameter.
+
+        And I create a device with clientId "testDevice1"
+        Given I expect the exception "KapuaDuplicateNameException" with the text "*"
+        And I create a device with clientId "testDevice1"
+        Then An exception was thrown
+        When I query for device with clientId "testDevice1"
+        And I count 1 device

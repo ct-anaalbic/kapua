@@ -76,12 +76,13 @@ import org.eclipse.kapua.service.device.registry.DeviceRegistryService;
 import org.eclipse.kapua.service.device.registry.DeviceStatus;
 import org.eclipse.kapua.service.device.registry.connection.DeviceConnection;
 import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionCreator;
-import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionDomain;
-import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionFactory;
-import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionListResult;
-import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionQuery;
-import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionService;
 import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionStatus;
+import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionQuery;
+import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionListResult;
+import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionService;
+import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionFactory;
+import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionDomain;
+import org.eclipse.kapua.service.device.registry.connection.DeviceConnectionAttributes;
 import org.eclipse.kapua.service.device.registry.event.DeviceEvent;
 import org.eclipse.kapua.service.device.registry.event.DeviceEventAttributes;
 import org.eclipse.kapua.service.device.registry.event.DeviceEventCreator;
@@ -1246,7 +1247,7 @@ public class DeviceRegistrySteps extends TestBase {
         Assert.assertEquals(tmpStat, tmpConnection.getStatus());
     }
 
-    @Then("^I count (\\d+) connections in scope (-?\\d+)$")
+    @Then("^I count (\\d+) connection(?:|s) in scope (-?\\d+)$")
     public void countConnectioncInScope(int target, int scope)
             throws Exception {
 
@@ -2526,7 +2527,7 @@ public class DeviceRegistrySteps extends TestBase {
         return false;
     }
 
-    @Then("^I create a device with name \"([^\"]*)\"$")
+    @Then("^I create a device with clientId \"([^\"]*)\"$")
     public void iCreateADeviceWithName(String clientId) throws Exception {
         DeviceCreator deviceCreator = deviceFactory.newCreator(getCurrentScopeId());
         deviceCreator.setClientId(clientId);
@@ -2561,5 +2562,170 @@ public class DeviceRegistrySteps extends TestBase {
         Device device = (Device) stepData.get("Device");
 
         assertEquals(device.getClientId(), deviceName);
+    }
+
+    @Given("^I create the new connection(?:|s) with clientId \"([^\"]*)\" and allowed symbols \"([^\"]*)\"$")
+    public void iCreateANewConnectionWithClientIdClientIpServerIpProtocolAndAllowUserChange(String clientId, String symbols) throws Exception {
+        DeviceConnectionCreator connectionCreator = deviceConnectionFactory.newCreator(getCurrentScopeId());
+        connectionCreator.setStatus(DeviceConnectionStatus.CONNECTED);
+        connectionCreator.setUserId(getCurrentUserId());
+        connectionCreator.setUserCouplingMode(ConnectionUserCouplingMode.LOOSE);
+        ArrayList<DeviceConnection> deviceConnections = new ArrayList<>();
+
+        for (int i = 0; i < symbols.length(); i++) {
+            try {
+                connectionCreator.setClientId(clientId + symbols.charAt(i));
+                DeviceConnection deviceConnection = deviceConnectionService.create(connectionCreator);
+                stepData.put("DeviceConnection", deviceConnection);
+                deviceConnections.add(deviceConnection);
+            } catch (KapuaException ex) {
+                verifyException(ex);
+            }
+            stepData.put("DeviceConnections", deviceConnections);
+        }
+    }
+
+    @And("^I query for connection with clientId \"([^\"]*)\"$")
+    public void iQueryForConnectionWithClientId(String clientId) throws Exception {
+
+        DeviceConnectionQuery deviceConnectionQuery = deviceConnectionFactory.newQuery(getCurrentScopeId());
+        deviceConnectionQuery.setPredicate(deviceConnectionQuery.attributePredicate(DeviceConnectionAttributes.CLIENT_ID, clientId));
+        DeviceConnectionListResult deviceConnections = deviceConnectionService.query(deviceConnectionQuery);
+        DeviceConnection deviceConnection = deviceConnections.getFirstItem();
+        stepData.put("DeviceConnection", deviceConnection);
+    }
+
+    @Then("^I find connection with clientId \"([^\"]*)\"$")
+    public void iFindConnectionWithClientId(String clientId) {
+    DeviceConnection deviceConnection = (DeviceConnection) stepData.get("DeviceConnection");
+
+    assertEquals(clientId, deviceConnection.getClientId());
+    }
+
+    @And("^I query for created connections$")
+    public void iQueryForCreatedConnections() throws Exception {
+        DeviceConnectionQuery deviceConnectionQuery = deviceConnectionFactory.newQuery(getCurrentScopeId());
+        DeviceConnectionListResult connectionList = deviceConnectionService.query(deviceConnectionQuery);
+
+        stepData.put("DeviceConnectionListResult", connectionList);
+    }
+
+    @Then("^Connection is not found$")
+    public void connectionIsNotFound() {
+
+    }
+
+    @Then("^I find connections with clientId which contains \"([^\"]*)\" word$")
+    public void iFindConnectionsWithEveryAllowedSimbol(String clientId) {
+        DeviceConnectionListResult connectionList = (DeviceConnectionListResult) stepData.get("DeviceConnectionListResult");
+        List<DeviceConnection> connections = connectionList.getItems();
+        for (DeviceConnection connection : connections) {
+            assertTrue(connection.getClientId().contains(clientId));
+        }
+    }
+
+    @Given("^I create a device(?:|s) with clientId \"([^\"]*)\" and symbols \"([^\"]*)\"$")
+    public void iCreateADeviceWithClientIdAndAllowedSymbolsIntoIt(String clientId, String allowedSymbols) throws Throwable {
+        DeviceCreator deviceCreator = deviceFactory.newCreator(getCurrentScopeId());
+
+        ArrayList<Device> devices = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < allowedSymbols.length(); i++) {
+                deviceCreator.setClientId(clientId + allowedSymbols.charAt(i));
+                Device device = deviceRegistryService.create(deviceCreator);
+                stepData.put("Device", device);
+                devices.add(device);
+            }
+            stepData.put("DeviceConnections", devices);
+        } catch (KapuaException ex) {
+            verifyException(ex);
+        }
+    }
+
+    @When("^I query for created devices$")
+    public void iQueryForCreatedDevices() throws Exception {
+        DeviceQuery deviceQuery = deviceFactory.newQuery(getCurrentScopeId());
+        DeviceListResult devices = deviceRegistryService.query(deviceQuery);
+
+        stepData.put("DeviceListResult", devices);
+    }
+
+    @Then("^I find devices with clientId which contains \"([^\"]*)\" word$")
+    public void iFindDevicesWithClientIdAndEveryAllowedSymbol(String clientId) {
+        DeviceListResult deviceList = (DeviceListResult) stepData.get("DeviceListResult");
+        List<Device> devices = deviceList.getItems();
+        for (Device device : devices) {
+            assertTrue(device.getClientId().contains(clientId));
+        }
+    }
+
+    @And("^I count (\\d+) device(?:|s)$")
+    public void iCountDevice(long deviceCount) {
+
+        assertEquals(deviceCount, (long) stepData.get("DeviceCount"));
+    }
+
+    @When("^I create a device with clientId \"([^\"]*)\" and invalid symbols \"([^\"]*)\"$")
+    public void iCreateADeviceWithClientIdAndInvalidSymbols(String clientId, String invalidSymbols) throws Throwable {
+        primeException();
+        DeviceCreator deviceCreator = deviceFactory.newCreator(getCurrentScopeId());
+
+        for (int i = 0; i < invalidSymbols.length(); i++) {
+            try {
+                if (invalidSymbols.charAt(i) == ':') {
+                    deviceCreator.setClientId(clientId + invalidSymbols.charAt(i) + invalidSymbols.charAt(i));
+                } else {
+                    deviceCreator.setClientId(clientId + invalidSymbols.charAt(i));
+                }
+                Device device = deviceRegistryService.create(deviceCreator);
+                stepData.put("Device", device);
+            } catch (KapuaException ex) {
+                verifyException(ex);
+            }
+        }
+    }
+
+    @Then("^There is (\\d+) devices$")
+    public void thereIsNoSuchDevices(long devicesCount) {
+        DeviceListResult deviceListResult = (DeviceListResult) stepData.get("DeviceListResult");
+
+        assertEquals(devicesCount, (long) deviceListResult.getSize());
+    }
+
+    @And("^I query for device with clientId \"([^\"]*)\"$")
+    public void iqueryForDeviceWithClientId(String clientId) throws Exception {
+        DeviceQuery deviceQuery = deviceFactory.newQuery(getCurrentScopeId());
+
+        deviceQuery.setPredicate(deviceQuery.attributePredicate(DeviceAttributes.CLIENT_ID, clientId, AttributePredicate.Operator.EQUAL));
+        DeviceListResult deviceListResult = deviceRegistryService.query(deviceQuery);
+        Device device = deviceListResult.getFirstItem();
+        stepData.put("Device", device);
+        stepData.put("DeviceCount", (long) deviceListResult.getSize());
+    }
+
+    @When("^I create the new connections with clientId \"([^\"]*)\" and invalid symbols \"([^\"]*)\"$")
+    public void iCreateTheNewConnectionsWithClientIdAndInvalidSymbols(String clientId, String invalidSymbols) throws Throwable {
+        DeviceConnectionCreator connectionCreator = deviceConnectionFactory.newCreator(getCurrentScopeId());
+        connectionCreator.setStatus(DeviceConnectionStatus.CONNECTED);
+        connectionCreator.setUserId(getCurrentUserId());
+        connectionCreator.setUserCouplingMode(ConnectionUserCouplingMode.LOOSE);
+        ArrayList<DeviceConnection> deviceConnections = new ArrayList<>();
+
+        for (int i = 0; i < invalidSymbols.length(); i++) {
+            try {
+                if (invalidSymbols.charAt(i) == ':') {
+                    connectionCreator.setClientId(clientId + invalidSymbols.charAt(i) + invalidSymbols.charAt(i));
+                } else {
+                    connectionCreator.setClientId(clientId + invalidSymbols.charAt(i));
+                }
+                DeviceConnection deviceConnection = deviceConnectionService.create(connectionCreator);
+                stepData.put("DeviceConnection", deviceConnection);
+                deviceConnections.add(deviceConnection);
+            } catch (KapuaException ex) {
+                verifyException(ex);
+            }
+            stepData.put("DeviceConnections", deviceConnections);
+        }
     }
 }

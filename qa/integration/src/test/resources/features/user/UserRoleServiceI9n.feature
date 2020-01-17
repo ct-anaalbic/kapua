@@ -128,7 +128,7 @@ Feature: User role service integration tests
     And I add access role "test_role" to user "user1"
     And I logout
     Then I login as user with name "user1" and password "User@10031995"
-    And I create a device with name "device1"
+    And I create a device with clientId "device1"
     And I find device with clientId "device1"
     And I try to edit device to clientId "device2"
     And I delete the device with the clientId "device1"
@@ -791,7 +791,7 @@ Feature: User role service integration tests
     And I find user with name "user"
     And I try to edit user to name "user1"
     And I try to delete user "user1"
-    And I create a device with name "TestDevice"
+    And I create a device with clientId "TestDevice"
     And I find device with clientId "TestDevice"
     And I try to edit device to clientId "TestDevice1"
     And I delete the device with the clientId "TestDevice1"
@@ -1144,7 +1144,7 @@ Feature: User role service integration tests
     And I add access role "Role1" to user "SubUser" in account "SubAccount"
     And I logout
     And I login as user with name "SubUser" and password "User@10031995"
-    And I create a device with name "TestDevice"
+    And I create a device with clientId "TestDevice"
     And I find device with clientId "TestDevice"
     And I try to edit device to clientId "TestDevice1"
     And I delete the device with the clientId "TestDevice1"
