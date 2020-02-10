@@ -53,13 +53,13 @@ public class DockerSteps {
 
     private NetworkConfig networkConfig;
 
-    private String networkId;
+    private static String networkId;
 
     private boolean debug;
 
     private List<String> envVar;
 
-    private Map<String, String> containerMap;
+    private static final StepData CONTAINER_MAP = new StepData();
 
     public Map<String, Integer> portMap;
 
@@ -73,8 +73,8 @@ public class DockerSteps {
     public DockerSteps(StepData stepData) {
 
         this.stepData = stepData;
-        containerMap = new HashMap<>();
-    }
+        //containerMap = new HashMap<>();
+}
 
     @Given("^Enable debug$")
     public void enableDebug() {
@@ -193,7 +193,7 @@ public class DockerSteps {
 
         docker.startContainer(containerId);
         docker.connectToNetwork(containerId, networkId);
-        containerMap.put("db", containerId);
+        CONTAINER_MAP.put("db", containerId);
         logger.info("DB container started: {}", containerId);
     }
 
@@ -206,7 +206,7 @@ public class DockerSteps {
 
         docker.startContainer(containerId);
         docker.connectToNetwork(containerId, networkId);
-        containerMap.put("es", containerId);
+        CONTAINER_MAP.put("es", containerId);
         logger.info("ES container started: {}", containerId);
     }
 
@@ -219,7 +219,7 @@ public class DockerSteps {
 
         docker.startContainer(containerId);
         docker.connectToNetwork(containerId, networkId);
-        containerMap.put(name, containerId);
+        CONTAINER_MAP.put(name, containerId);
         logger.info("EventBroker container started: {}", containerId);
     }
 
@@ -237,14 +237,14 @@ public class DockerSteps {
 
         docker.startContainer(containerId);
         docker.connectToNetwork(containerId, networkId);
-        containerMap.put(bcData.getName(), containerId);
+        CONTAINER_MAP.put(bcData.getName(), containerId);
         logger.info("Message Broker {} container started: {}", bcData.getName(), containerId);
     }
 
     @Then("^Stop container with name \"(.*)\"$")
     public void stopContainer(String name) throws DockerException, InterruptedException {
         logger.info("Stopping container {}...", name);
-        String containerId = containerMap.get(name);
+        String containerId = (String) CONTAINER_MAP.get(name);
         docker.stopContainer(containerId, 3);
         logger.info("Container {} stopped.", name);
     }
@@ -252,9 +252,22 @@ public class DockerSteps {
     @Then("^Remove container with name \"(.*)\"$")
     public void removeContainer(String name) throws DockerException, InterruptedException {
         logger.info("Removing container {}...", name);
-        String containerId = containerMap.get(name);
+        String containerId = (String) CONTAINER_MAP.get(name);
         docker.removeContainer(containerId);
         logger.info("Container {} removed.", name);
+    }
+
+    @And("^Start API container with name \"(.*)\"$")
+    public void startApiContainer(String name) throws DockerException, InterruptedException {
+        logger.info("Starting API container...");
+        ContainerConfig apiConfig = getApiContainerConfig();
+        ContainerCreation dbContainerCreation = docker.createContainer(apiConfig, name);
+        String containerId = dbContainerCreation.id();
+
+        docker.startContainer(containerId);
+        docker.connectToNetwork(containerId, networkId);
+        CONTAINER_MAP.put("api", containerId);
+        logger.info("DB container started: {}", containerId);
     }
 
     /**
@@ -401,6 +414,20 @@ public class DockerSteps {
                 .hostConfig(hostConfig)
                 .exposedPorts(String.valueOf(brokerPort))
                 .image("kapua/kapua-events-broker:1.2.0-SNAPSHOT")
+                .build();
+    }
+
+    private ContainerConfig getApiContainerConfig() {
+        final int apiPort = 8080;
+        final int hostPort = 8088;
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+        addHostPort("0.0.0.0", portBindings, apiPort, hostPort);
+        final HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
+
+        return ContainerConfig.builder()
+                .hostConfig(hostConfig)
+                .exposedPorts(String.valueOf(apiPort))
+                .image("kapua/kapua-api:1.2.0-SNAPSHOT")
                 .build();
     }
 

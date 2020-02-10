@@ -47,6 +47,8 @@
         <module>web</module>
         <module>core</module>
         <module>resources</module>
+        <module>test</module>
+        <module>test-steps</module>
     </modules>
 
 </project>

@@ -90,6 +90,9 @@ jobs:
     - ./travis.sh $M2_HOME/bin/mvn -B ${BUILD_OPTS} ${CONFIG_OVERRIDES} -Dgroups='!org.eclipse.kapua.qa.markers.junit.JUnitTests' -Dcucumber.options="--tags @jobEngineServiceStop" verify
   - stage: test
     script:
+    - ./travis.sh $M2_HOME/bin/mvn -B ${BUILD_OPTS} ${CONFIG_OVERRIDES} -Dgroups='!org.eclipse.kapua.qa.markers.junit.JUnitTests' -Dcucumber.options="--tags @restApi" verify
+  - stage: test
+    script:
     - ./travis.sh $M2_HOME/bin/mvn -B ${BUILD_OPTS} ${CONFIG_OVERRIDES} -Dgroups='org.eclipse.kapua.qa.markers.junit.JUnitTests' verify
   - stage: test
     script:
